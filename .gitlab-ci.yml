@@ -1,0 +1,134 @@
+image: docker:latest
+
+stages:
+  - lint
+  - test
+  - build
+  - deploy
+
+variables:
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_DRIVER: overlay2
+  CONTAINER_TEST_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+  CONTAINER_RELEASE_IMAGE: $CI_REGISTRY_IMAGE:latest
+
+services:
+  - docker:dind
+
+before_script:
+  - docker info
+
+lint:
+  stage: lint
+  image: node:16
+  script:
+    - npm install
+    - npm run lint
+  only:
+    changes:
+      - src/**/*
+      - package.json
+
+test:
+  stage: test
+  image: node:16
+  script:
+    - npm install
+    - npm run test
+  coverage: '/All files[^)]*\(([^)]+)/'
+  only:
+    changes:
+      - src/**/*
+      - test/**/*
+      - package.json
+
+build:
+  stage: build
+  script:
+    - docker build -t $CONTAINER_TEST_IMAGE .
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker push $CONTAINER_TEST_IMAGE
+  only:
+    - main
+    - merge_requests
+
+ml-service-build:
+  stage: build
+  script:
+    - docker build -t $CI_REGISTRY_IMAGE/ml-service:$CI_COMMIT_REF_SLUG ml-service/
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker push $CI_REGISTRY_IMAGE/ml-service:$CI_COMMIT_REF_SLUG
+  only:
+    - main
+    - merge_requests
+
+deploy-staging:
+  stage: deploy
+  script:
+    - docker-compose -f docker-compose.staging.yml up -d
+  environment:
+    name: staging
+    url: https://staging.licitometro.com
+  only:
+    - main
+
+deploy-production:
+  stage: deploy
+  script:
+    - docker-compose -f docker-compose.prod.yml up -d
+  environment:
+    name: production
+    url: https://licitometro.com
+  only:
+    - tags
+
+performance-test:
+  stage: test
+  script:
+    - npm install -g artillery
+    - artillery run performance-tests/load-test.yml
+  only:
+    changes:
+      - performance-tests/**/*
+
+security-scan:
+  stage: test
+  script:
+    - docker run --rm -v $PWD:/src aquasec/trivy image $CONTAINER_TEST_IMAGE
+  only:
+    - main
+    - merge_requests
+
+release-image:
+  stage: deploy
+  script:
+    - docker pull $CONTAINER_TEST_IMAGE
+    - docker tag $CONTAINER_TEST_IMAGE $CONTAINER_RELEASE_IMAGE
+    - docker push $CONTAINER_RELEASE_IMAGE
+  only:
+    - main
+
+# Configuraciones adicionales
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - node_modules/
+    - .npm/
+
+# Notificaciones
+notify_success:
+  stage: deploy
+  script:
+    - 'curl -X POST -H "Content-type: application/json" --data "{\"text\":\"Deployment successful for $CI_PROJECT_NAME\"}" $SLACK_WEBHOOK_URL'
+  only:
+    - main
+  when: on_success
+
+notify_failure:
+  stage: deploy
+  script:
+    - 'curl -X POST -H "Content-type: application/json" --data "{\"text\":\"Deployment failed for $CI_PROJECT_NAME\"}" $SLACK_WEBHOOK_URL'
+  only:
+    - main
+  when: on_failure

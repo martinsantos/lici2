@@ -1,0 +1,10 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import TemplateManager from '../../components/TemplateManager';
+---
+
+<Layout title="Gestor de Plantillas">
+  <main class="container mx-auto px-4 py-8">
+    <TemplateManager client:load />
+  </main>
+</Layout>

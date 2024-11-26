@@ -1,0 +1,17 @@
+FROM postgres:13
+
+# Copiar scripts de inicialización
+COPY init-db/*.sql /docker-entrypoint-initdb.d/
+
+# Establecer permisos
+RUN chmod 755 /docker-entrypoint-initdb.d/*.sql
+
+# Variables de entorno por defecto
+ENV POSTGRES_DB=licitometro
+ENV POSTGRES_USER=licitometro_admin
+ENV POSTGRES_PASSWORD=licitometro_secret
+
+# Exponer puerto
+EXPOSE 5432
+
+# El punto de entrada por defecto de la imagen de PostgreSQL ya maneja la inicialización

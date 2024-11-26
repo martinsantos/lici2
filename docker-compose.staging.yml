@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  database:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: licitometro_staging
+      POSTGRES_USER: staging_admin
+      POSTGRES_PASSWORD: ${STAGING_DB_PASSWORD}
+    volumes:
+      - staging-postgres-data:/var/lib/postgresql/data
+    networks:
+      - staging-network
+
+  app:
+    image: ${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}
+    environment:
+      - NODE_ENV=staging
+      - DATABASE_URL=postgresql://staging_admin:${STAGING_DB_PASSWORD}@database:5432/licitometro_staging
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - database
+      - redis
+    networks:
+      - staging-network
+
+  redis:
+    image: redis:6.2-alpine
+    networks:
+      - staging-network
+
+  ml-service:
+    image: ${CI_REGISTRY_IMAGE}/ml-service:${CI_COMMIT_REF_SLUG}
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgresql://staging_admin:${STAGING_DB_PASSWORD}@database:5432/licitometro_staging
+    depends_on:
+      - database
+      - redis
+    networks:
+      - staging-network
+
+networks:
+  staging-network:
+    driver: bridge
+
+volumes:
+  staging-postgres-data:

@@ -1,0 +1,80 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header';
+import PlantillasList from '../../components/PlantillasList';
+import PlantillaEditor from '../../components/PlantillaEditor';
+import { useState } from 'react';
+import type { Plantilla } from '../../types';
+
+// Mock data for development
+const initialPlantillas: Plantilla[] = [
+  {
+    id: '1',
+    nombre: 'Plantilla de Licitaciones',
+    descripcion: 'Campos básicos para licitaciones estándar',
+    campos: [
+      { id: 'campo1', nombre: 'Título', tipo: 'texto', requerido: true },
+      { id: 'campo2', nombre: 'Presupuesto', tipo: 'numero', requerido: true },
+    ],
+    fuente: 'manual',
+    activa: true,
+  },
+  {
+    id: '2',
+    nombre: 'Plantilla de Contratos',
+    descripcion: 'Campos esenciales para contratos',
+    campos: [
+      { id: 'campo3', nombre: 'Número de Contrato', tipo: 'texto', requerido: true },
+      { id: 'campo4', nombre: 'Fecha de Inicio', tipo: 'fecha', requerido: true },
+    ],
+    fuente: 'manual',
+    activa: true,
+  },
+];
+
+const handleEdit = (id: string) => {
+  console.log('Edit plantilla:', id);
+};
+
+const handleDelete = (id: string) => {
+  console.log('Delete plantilla:', id);
+};
+
+const handleSave = (plantilla: Plantilla) => {
+  console.log('Save plantilla:', plantilla);
+};
+
+const handleCancel = () => {
+  console.log('Cancel editing');
+};
+---
+
+<Layout title="Plantillas | Licitometro 2.0">
+  <Header client:load />
+  
+  <main class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+    <div class="md:flex md:items-center md:justify-between">
+      <div class="min-w-0 flex-1">
+        <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
+          Plantillas
+        </h2>
+      </div>
+      <div class="mt-4 flex md:ml-4 md:mt-0">
+        <button
+          type="button"
+          class="ml-3 inline-flex items-center rounded-md bg-primary-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
+        >
+          Nueva Plantilla
+        </button>
+      </div>
+    </div>
+
+    <div class="mt-8">
+      <PlantillasList client:load plantillas={initialPlantillas} onEdit={handleEdit} onDelete={handleDelete} />
+    </div>
+
+    <div class="mt-8">
+      <PlantillaEditor client:load onSave={handleSave} onCancel={handleCancel} />
+    </div>
+  </main>
+</Layout>

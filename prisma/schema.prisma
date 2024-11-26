@@ -1,0 +1,62 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Licitacion {
+  id            String   @id @default(uuid()) @map("id")
+  title         String   @map("title")
+  description   String?  @map("description")
+  publishedDate DateTime @default(now()) @map("published_date")
+  closingDate   DateTime @map("closing_date")
+  status        String   @map("status")
+  category      String   @map("category")
+  budget        Float    @map("budget")
+  
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("licitaciones")
+}
+
+model MLModel {
+  id            String   @id @default(uuid()) @map("id")
+  name          String   @map("name")
+  version       String   @map("version")
+  type          String   @map("type")
+  accuracy      Float    @map("accuracy")
+  trainingDate  DateTime @default(now()) @map("training_date")
+  
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("ml_models")
+}
+
+model Prediction {
+  id            String   @id @default(uuid()) @map("id")
+  modelId       String   @map("model_id")
+  inputData     Json     @map("input_data")
+  outputData    Json     @map("output_data")
+  confidence    Float    @map("confidence")
+  
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@map("predictions")
+}
+
+model User {
+  id            String   @id @default(uuid()) @map("id")
+  email         String   @unique @map("email")
+  name          String?  @map("name")
+  role          String   @map("role")
+  
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}

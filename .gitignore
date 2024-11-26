@@ -1,0 +1,70 @@
+# Dependencias
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Archivos de entorno
+.env
+*.env
+!.env.example
+
+# Archivos de compilación
+dist/
+build/
+out/
+
+# Archivos de logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Archivos de IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de machine learning
+*.pkl
+*.model
+models/
+
+# Caché
+.cache/
+.npm/
+.eslintcache
+
+# Archivos de pruebas
+coverage/
+.nyc_output/
+
+# Archivos de Docker
+.docker/
+
+# Archivos de bases de datos
+*.sqlite
+*.db
+
+# Archivos temporales
+tmp/
+temp/
+
+# Archivos de configuración de Prisma
+prisma/migrations/
+prisma/dev.db
+
+# Archivos de machine learning
+ml-models/
+*.h5
+*.pt
+*.pth
+
+# Archivos de configuración específicos
+config.json
+secrets.json
