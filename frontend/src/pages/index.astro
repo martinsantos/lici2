@@ -1,0 +1,29 @@
+---
+import Layout from '../layouts/Layout.astro';
+import DashboardStats from '../components/DashboardStats';
+import RecentTenders from '../components/RecentTenders';
+import NotificationsList from '../components/NotificationsList';
+---
+
+<Layout title="Dashboard - Licitometro 2.0">
+  <div class="space-y-8">
+    <h1 class="text-3xl font-bold text-gray-900">Dashboard</h1>
+    
+    <!-- Stats Overview -->
+    <DashboardStats client:load />
+    
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <!-- Recent Tenders -->
+      <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Licitaciones Recientes</h2>
+        <RecentTenders client:load />
+      </div>
+      
+      <!-- Recent Notifications -->
+      <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Últimas Notificaciones</h2>
+        <NotificationsList client:load />
+      </div>
+    </div>
+  </div>
+</Layout>

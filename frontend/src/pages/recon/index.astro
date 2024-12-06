@@ -1,0 +1,11 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { ReconDashboard } from '../../components/recon/ReconDashboard';
+---
+
+<Layout title="RECON Dashboard - Licitometro">
+  <main class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-8">RECON Dashboard</h1>
+    <ReconDashboard client:load />
+  </main>
+</Layout>

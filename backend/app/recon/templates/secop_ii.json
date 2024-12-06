@@ -1,0 +1,106 @@
+{
+    "nombre": "secop_ii_licitaciones",
+    "descripcion": "Plantilla para extracción de licitaciones del SECOP II",
+    "fuente": "https://community.secop.gov.co/Public/Tendering/ContractNoticeManagement/Index",
+    "configuracion_fuente": {
+        "url_inicial": "https://community.secop.gov.co/Public/Tendering/ContractNoticeManagement/Index",
+        "tipo": "web",
+        "headers": {
+            "User-Agent": "Licitometro/1.0 (+http://licitometro.com)"
+        }
+    },
+    "reglas": {
+        "selectores_lista": [
+            "div.procurement-record"
+        ],
+        "selector_siguiente": "a.next-page::attr(href)",
+        "validaciones": {
+            "monto_estimado": {
+                "tipo": "numero",
+                "rango": [0, 1000000000000]
+            },
+            "fecha_publicacion": {
+                "tipo": "fecha",
+                "rango": ["2020-01-01", "2025-12-31"]
+            }
+        }
+    },
+    "mapeo": {
+        "numero_proceso": {
+            "tipo": "css",
+            "selector": "span.process-number::text",
+            "transformaciones": [{"tipo": "texto"}]
+        },
+        "entidad": {
+            "tipo": "css",
+            "selector": "div.entity-name::text",
+            "transformaciones": [{"tipo": "texto"}]
+        },
+        "objeto": {
+            "tipo": "css",
+            "selector": "div.process-description::text",
+            "transformaciones": [{"tipo": "texto"}]
+        },
+        "monto_estimado": {
+            "tipo": "css",
+            "selector": "span.estimated-value::text",
+            "transformaciones": [
+                {"tipo": "numero"}
+            ]
+        },
+        "fecha_publicacion": {
+            "tipo": "css",
+            "selector": "span.publication-date::text",
+            "transformaciones": [
+                {
+                    "tipo": "fecha",
+                    "formato": "%Y-%m-%d"
+                }
+            ]
+        },
+        "estado": {
+            "tipo": "css",
+            "selector": "span.status::text",
+            "transformaciones": [{"tipo": "texto"}]
+        },
+        "ubicacion": {
+            "tipo": "css",
+            "selector": "span.location::text",
+            "transformaciones": [{"tipo": "texto"}]
+        }
+    },
+    "documentos": [
+        {
+            "tipo": "pliego",
+            "patron_nombre": "pliego_definitivo",
+            "campos": {
+                "objeto": {
+                    "tipo": "regex",
+                    "patron": "(?i)OBJETO DEL CONTRATO:?\\s*([^\\n]+)"
+                },
+                "plazo": {
+                    "tipo": "regex",
+                    "patron": "(?i)PLAZO DE EJECUCIÓN:?\\s*([^\\n]+)"
+                },
+                "requisitos": {
+                    "tipo": "regex",
+                    "patron": "(?i)REQUISITOS HABILITANTES:?\\s*([^\\n]+)"
+                }
+            }
+        },
+        {
+            "tipo": "estudios_previos",
+            "patron_nombre": "estudios_previos",
+            "campos": {
+                "justificacion": {
+                    "tipo": "regex",
+                    "patron": "(?i)JUSTIFICACIÓN:?\\s*([^\\n]+)"
+                },
+                "especificaciones": {
+                    "tipo": "regex",
+                    "patron": "(?i)ESPECIFICACIONES TÉCNICAS:?\\s*([^\\n]+)"
+                }
+            }
+        }
+    ]
+}
