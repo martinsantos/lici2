@@ -1,176 +1,258 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import { formatCurrency } from '../../utils/formatters';
+import type { Licitacion } from '../../types';
+import LicitacionFormWrapper from '../../components/LicitacionFormWrapper';
+import DocumentList from '../../components/DocumentList';
+import { formatDate } from '../../utils/dateUtils';
+import { FaEdit, FaHandshake, FaFileAlt, FaCalendarAlt, FaBuilding, FaMoneyBillWave, FaMapMarkerAlt, FaClock, FaShieldAlt } from 'react-icons/fa';
 
 const { id } = Astro.params;
-let licitacion = null;
+const { searchParams } = Astro.url;
+const isEditing = searchParams.get('edit') === 'true';
+const numericId = parseInt(id || '', 10);
+
+let licitacion: Licitacion | null = null;
 let error = null;
 
 try {
-  const response = await fetch(`http://127.0.0.1:8003/licitaciones/${id}`, {
+  if (isNaN(numericId)) {
+    throw new Error('ID de licitación inválido');
+  }
+
+  const response = await fetch(`${import.meta.env.PUBLIC_API_URL || 'http://127.0.0.1:8000'}/api/licitaciones/${numericId}`, {
     method: 'GET',
     headers: {
       'Accept': 'application/json',
-    },
+      'Content-Type': 'application/json'
+    }
   });
 
   if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
+    if (response.status === 404) {
+      return Astro.redirect('/404');
+    }
+    throw new Error(`Error al obtener la licitación: ${response.status} ${response.statusText}`);
   }
 
-  const data = await response.json();
-  licitacion = data.data;
+  licitacion = await response.json();
 } catch (e) {
   console.error('Error fetching licitacion:', e);
-  error = e.message;
+  error = e;
 }
+
+const formatCurrency = (amount: number | null | undefined, currency: string = 'ARS') => {
+  if (amount == null) return 'No especificado';
+  return new Intl.NumberFormat('es-AR', {
+    style: 'currency',
+    currency: currency,
+    maximumFractionDigits: 0
+  }).format(amount);
+};
 ---
 
-<Layout title={licitacion ? licitacion.titulo : 'Licitación no encontrada'}>
-  <main class="container mx-auto px-4 py-8">
+<Layout title={licitacion?.titulo || 'Licitación no encontrada'}>
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     {error && (
       <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
         <strong class="font-bold">Error:</strong>
-        <span class="block sm:inline"> {error}</span>
+        <span class="block sm:inline"> {error instanceof Error ? error.message : 'Error al cargar la licitación'}</span>
       </div>
     )}
 
-    {licitacion && (
-      <div class="bg-white shadow-xl rounded-lg overflow-hidden max-w-4xl mx-auto">
-        <div class="p-8">
-          {/* Encabezado */}
-          <div class="flex justify-between items-start mb-6">
-            <div>
-              <h1 class="text-3xl font-bold text-gray-900 mb-2">{licitacion.titulo}</h1>
-              <p class="text-lg text-gray-600">{licitacion.descripcion}</p>
-            </div>
-            <span class={`px-4 py-2 rounded-full text-sm font-semibold ${
-              licitacion.estado === 'Abierta' ? 'bg-green-100 text-green-800' :
-              licitacion.estado === 'Cerrada' ? 'bg-red-100 text-red-800' :
-              'bg-yellow-100 text-yellow-800'
-            }`}>
-              {licitacion.estado}
-            </span>
-          </div>
-
-          {/* Información Principal */}
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-            <div class="space-y-4">
-              <div>
-                <h3 class="text-lg font-semibold text-gray-900 mb-2">Información General</h3>
-                <div class="space-y-2">
-                  <p><span class="font-medium">Número de Licitación:</span> {licitacion.numeroLicitacion}</p>
-                  <p><span class="font-medium">Expediente:</span> {licitacion.numeroExpediente}</p>
-                  <p><span class="font-medium">Organismo:</span> {licitacion.organismo}</p>
-                  <p><span class="font-medium">Área:</span> {licitacion.area}</p>
-                  <p><span class="font-medium">Categoría:</span> {licitacion.categoria}</p>
-                  <p><span class="font-medium">Modalidad:</span> {licitacion.modalidad}</p>
-                  <p><span class="font-medium">Ubicación:</span> {licitacion.ubicacion}</p>
-                </div>
-              </div>
-
-              <div>
-                <h3 class="text-lg font-semibold text-gray-900 mb-2">Fechas Importantes</h3>
-                <div class="space-y-2">
-                  <p><span class="font-medium">Publicación:</span> {licitacion.fechaPublicacion}</p>
-                  <p><span class="font-medium">Apertura:</span> {licitacion.fechaApertura}</p>
-                  <p><span class="font-medium">Plazo:</span> {licitacion.plazo}</p>
-                </div>
-              </div>
-            </div>
-
-            <div class="space-y-4">
-              <div>
-                <h3 class="text-lg font-semibold text-gray-900 mb-2">Información Económica</h3>
-                <div class="space-y-2">
-                  <p><span class="font-medium">Monto:</span> {formatCurrency(licitacion.monto, licitacion.moneda)}</p>
-                  <p><span class="font-medium">Presupuesto:</span> {formatCurrency(licitacion.presupuesto, licitacion.moneda)}</p>
-                  <p><span class="font-medium">Moneda:</span> {licitacion.moneda}</p>
-                </div>
-              </div>
-
-              <div>
-                <h3 class="text-lg font-semibold text-gray-900 mb-2">Garantía</h3>
-                <div class="space-y-2">
-                  {licitacion.garantia ? (
-                    <>
-                      <p><span class="font-medium">Tipo:</span> {licitacion.garantia.tipo}</p>
-                      <p><span class="font-medium">Monto:</span> {formatCurrency(Number(licitacion.garantia.monto), licitacion.moneda)}</p>
-                      <p><span class="font-medium">Plazo:</span> {licitacion.garantia.plazo}</p>
-                    </>
-                  ) : (
-                    <p class="text-gray-500">No hay información de garantía disponible</p>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <h3 class="text-lg font-semibold text-gray-900 mb-2">Contacto</h3>
-                <div class="space-y-2">
-                  {licitacion.contacto ? (
-                    <>
-                      <p><span class="font-medium">Nombre:</span> {licitacion.contacto.nombre}</p>
-                      <p><span class="font-medium">Email:</span> {licitacion.contacto.email}</p>
-                      <p><span class="font-medium">Teléfono:</span> {licitacion.contacto.telefono}</p>
-                    </>
-                  ) : (
-                    <p class="text-gray-500">No hay información de contacto disponible</p>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Documentos y Requisitos */}
-          <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div>
-              <h3 class="text-lg font-semibold text-gray-900 mb-4">Requisitos</h3>
-              {licitacion.requisitos && licitacion.requisitos.length > 0 ? (
-                <ul class="list-disc list-inside space-y-2">
-                  {licitacion.requisitos.map((requisito) => (
-                    <li class="text-gray-700">{requisito}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p class="text-gray-500">No hay requisitos especificados</p>
-              )}
-            </div>
-
-            <div>
-              <h3 class="text-lg font-semibold text-gray-900 mb-4">Documentos</h3>
-              {licitacion.documentos && licitacion.documentos.length > 0 ? (
-                <div class="grid grid-cols-1 gap-4">
-                  {licitacion.documentos.map((documento) => (
-                    <div class="border rounded-lg p-4 flex items-center justify-between">
-                      <div>
-                        <p class="font-medium">{documento.nombre}</p>
-                        <p class="text-sm text-gray-500">{documento.tipo}</p>
-                      </div>
-                      <a href={documento.url} target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800">
-                        Descargar
-                      </a>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p class="text-gray-500">No hay documentos disponibles</p>
-              )}
-            </div>
-          </div>
-
-          {/* Información Adicional */}
-          <div class="mt-8 pt-6 border-t">
-            <div class="flex justify-between text-sm text-gray-500">
-              <div>
-                <span class="font-medium">Idioma:</span> {licitacion.idioma}
-              </div>
-              <div>
-                <span class="font-medium">Etapa actual:</span> {licitacion.etapa}
-              </div>
-            </div>
+    {isEditing ? (
+      <div class="bg-white shadow sm:rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+          <h3 class="text-lg leading-6 font-medium text-gray-900">Editar Licitación</h3>
+          <div class="mt-5">
+            <LicitacionFormWrapper client:only="react" initialData={licitacion} isEditing={true} />
           </div>
         </div>
       </div>
+    ) : (
+      licitacion && (
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+          <div class="px-4 py-5 sm:px-6 flex justify-between items-center bg-gray-50">
+            <div>
+              <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                <FaFileAlt className="text-indigo-600" />
+                {licitacion.titulo}
+              </h1>
+              <p class="mt-1 max-w-2xl text-sm text-gray-500">
+                ID: {licitacion.id}
+              </p>
+            </div>
+            <a
+              href={`/licitaciones/${licitacion.id}?edit=true`}
+              class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              <FaEdit className="-ml-1 mr-2 h-5 w-5" />
+              Editar
+            </a>
+          </div>
+
+          <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
+            <dl class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
+              <div class="sm:col-span-2">
+                <dt class="text-sm font-medium text-gray-500 flex items-center gap-2">
+                  <FaFileAlt className="text-gray-400" />
+                  Descripción
+                </dt>
+                <dd class="mt-1 text-sm text-gray-900 whitespace-pre-wrap bg-gray-50 p-4 rounded-md">
+                  {licitacion.descripcion}
+                </dd>
+              </div>
+
+              <div>
+                <dt class="text-sm font-medium text-gray-500 flex items-center gap-2">
+                  <FaBuilding className="text-gray-400" />
+                  Organismo
+                </dt>
+                <dd class="mt-1 text-sm text-gray-900">{licitacion.organismo}</dd>
+              </div>
+
+              <div>
+                <dt class="text-sm font-medium text-gray-500 flex items-center gap-2">
+                  <FaMoneyBillWave className="text-gray-400" />
+                  Presupuesto
+                </dt>
+                <dd class="mt-1 text-sm text-gray-900">{formatCurrency(licitacion.presupuesto)}</dd>
+              </div>
+
+              <div>
+                <dt class="text-sm font-medium text-gray-500 flex items-center gap-2">
+                  <FaCalendarAlt className="text-gray-400" />
+                  Fecha de Publicación
+                </dt>
+                <dd class="mt-1 text-sm text-gray-900">{formatDate(licitacion.fechaPublicacion)}</dd>
+              </div>
+
+              <div>
+                <dt class="text-sm font-medium text-gray-500 flex items-center gap-2">
+                  <FaCalendarAlt className="text-gray-400" />
+                  Fecha de Apertura
+                </dt>
+                <dd class="mt-1 text-sm text-gray-900">{formatDate(licitacion.fechaApertura)}</dd>
+              </div>
+
+              <div>
+                <dt class="text-sm font-medium text-gray-500 flex items-center gap-2">
+                  Estado
+                </dt>
+                <dd class="mt-1 text-sm text-gray-900">
+                  <span class={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    licitacion.estado === 'ABIERTA' ? 'bg-green-100 text-green-800' :
+                    licitacion.estado === 'CERRADA' ? 'bg-red-100 text-red-800' :
+                    'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {licitacion.estado}
+                  </span>
+                </dd>
+              </div>
+
+              {licitacion.numeroExpediente && (
+                <div>
+                  <dt class="text-sm font-medium text-gray-500">Número de Expediente</dt>
+                  <dd class="mt-1 text-sm text-gray-900">{licitacion.numeroExpediente}</dd>
+                </div>
+              )}
+
+              {licitacion.contacto && (
+                <div>
+                  <dt class="text-sm font-medium text-gray-500">Contacto</dt>
+                  <dd class="mt-1 text-sm text-gray-900">{licitacion.contacto}</dd>
+                </div>
+              )}
+
+              {licitacion.ubicacion && (
+                <div>
+                  <dt class="text-sm font-medium text-gray-500 flex items-center gap-2">
+                    <FaMapMarkerAlt className="text-gray-400" />
+                    Ubicación
+                  </dt>
+                  <dd class="mt-1 text-sm text-gray-900">{licitacion.ubicacion}</dd>
+                </div>
+              )}
+
+              {licitacion.plazo && (
+                <div>
+                  <dt class="text-sm font-medium text-gray-500 flex items-center gap-2">
+                    <FaClock className="text-gray-400" />
+                    Plazo
+                  </dt>
+                  <dd class="mt-1 text-sm text-gray-900">{licitacion.plazo}</dd>
+                </div>
+              )}
+
+              {licitacion.garantia && (
+                <div>
+                  <dt class="text-sm font-medium text-gray-500 flex items-center gap-2">
+                    <FaShieldAlt className="text-gray-400" />
+                    Garantía
+                  </dt>
+                  <dd class="mt-1 text-sm text-gray-900">{licitacion.garantia}</dd>
+                </div>
+              )}
+
+              {licitacion.requisitos && Array.isArray(licitacion.requisitos) && licitacion.requisitos.length > 0 && (
+                <div class="sm:col-span-2">
+                  <dt class="text-sm font-medium text-gray-500">Requisitos</dt>
+                  <dd class="mt-1 text-sm text-gray-900">
+                    <ul class="list-disc pl-5 space-y-1">
+                      {licitacion.requisitos.map((requisito: string) => (
+                        <li>{requisito}</li>
+                      ))}
+                    </ul>
+                  </dd>
+                </div>
+              )}
+
+              {licitacion.documentos && Array.isArray(licitacion.documentos) && licitacion.documentos.length > 0 && (
+                <div class="sm:col-span-2">
+                  <dt class="text-sm font-medium text-gray-500 mb-2">Documentos</dt>
+                  <dd class="mt-2">
+                    <DocumentList client:load documents={licitacion.documentos} />
+                  </dd>
+                </div>
+              )}
+
+              {licitacion.area && (
+                <div>
+                  <dt class="text-sm font-medium text-gray-500">Área</dt>
+                  <dd class="mt-1 text-sm text-gray-900">{licitacion.area}</dd>
+                </div>
+              )}
+
+              {licitacion.modalidad && (
+                <div>
+                  <dt class="text-sm font-medium text-gray-500">Modalidad</dt>
+                  <dd class="mt-1 text-sm text-gray-900">{licitacion.modalidad}</dd>
+                </div>
+              )}
+
+              {licitacion.etapa && (
+                <div>
+                  <dt class="text-sm font-medium text-gray-500">Etapa</dt>
+                  <dd class="mt-1 text-sm text-gray-900">{licitacion.etapa}</dd>
+                </div>
+              )}
+
+              {licitacion.categoria && (
+                <div>
+                  <dt class="text-sm font-medium text-gray-500">Categoría</dt>
+                  <dd class="mt-1 text-sm text-gray-900">{licitacion.categoria}</dd>
+                </div>
+              )}
+
+              {licitacion.idioma && (
+                <div>
+                  <dt class="text-sm font-medium text-gray-500">Idioma</dt>
+                  <dd class="mt-1 text-sm text-gray-900">{licitacion.idioma}</dd>
+                </div>
+              )}
+            </dl>
+          </div>
+        </div>
+      )
     )}
   </main>
 </Layout>

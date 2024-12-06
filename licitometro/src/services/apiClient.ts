@@ -1,55 +1,31 @@
-const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000/api';
+import axios from 'axios';
 
-interface ApiOptions {
-  method?: string;
-  body?: any;
-  headers?: Record<string, string>;
-}
+const API_URL = import.meta.env.PUBLIC_API_URL || '/api';
 
-export class ApiError extends Error {
-  constructor(public status: number, message: string) {
-    super(message);
-    this.name = 'ApiError';
-  }
-}
-
-export async function apiClient(endpoint: string, options: ApiOptions = {}) {
+export async function apiClient(endpoint: string, options: any = {}) {
   const {
     method = 'GET',
     body,
     headers = {},
   } = options;
 
-  const config: RequestInit = {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...headers,
-    },
-    credentials: 'include', // Importante para manejar cookies de sesión
-  };
-
-  if (body) {
-    config.body = JSON.stringify(body);
-  }
-
   try {
-    const response = await fetch(`${API_URL}${endpoint}`, config);
-    
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'Error desconocido' }));
-      throw new ApiError(response.status, error.message || `Error ${response.status}`);
-    }
+    const response = await axios({
+      method,
+      url: `${API_URL}${endpoint}`,
+      data: body,
+      headers: {
+        'Content-Type': 'application/json',
+        ...headers,
+      },
+    });
 
-    if (response.status === 204) {
-      return null;
-    }
-
-    return response.json();
+    return response.data;
   } catch (error) {
-    if (error instanceof ApiError) {
-      throw error;
+    if (axios.isAxiosError(error)) {
+      console.error('API Error:', error.response?.data || error.message);
+      throw new Error(error.response?.data?.detail || error.message);
     }
-    throw new ApiError(500, 'Error de conexión al servidor');
+    throw error;
   }
 }

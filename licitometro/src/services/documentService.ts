@@ -1,80 +1,54 @@
-import type { Documento } from '../types';
-import { apiClient } from './apiClient';
+import { Documento } from '../types';
+import { API_BASE_URL } from '../config';
 
-const BUCKET_NAME = import.meta.env.PUBLIC_MINIO_BUCKET || 'licitometro';
+class DocumentService {
+  private static instance: DocumentService;
+  private baseUrl: string;
 
-export class DocumentService {
-  private static async handleResponse(response: any) {
+  private constructor() {
+    this.baseUrl = API_BASE_URL;
+  }
+
+  public static getInstance(): DocumentService {
+    if (!DocumentService.instance) {
+      DocumentService.instance = new DocumentService();
+    }
+    return DocumentService.instance;
+  }
+
+  async uploadDocument(file: File, licitacionId: number): Promise<Documento> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${this.baseUrl}/api/documents/upload/${licitacionId}`, {
+      method: 'POST',
+      body: formData,
+    });
+
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Error en la solicitud');
-    }
-    return response.data;
-  }
-
-  static async getUploadUrl(fileName: string, fileType: string): Promise<string> {
-    const response = await apiClient('/api/documentos/upload-url', {
-      method: 'POST',
-      body: {
-        fileName,
-        fileType,
-        bucket: BUCKET_NAME,
-      },
-    });
-
-    return response.data.url;
-  }
-
-  static async uploadFile(file: File): Promise<Documento> {
-    // 1. Get pre-signed URL
-    const uploadUrl = await this.getUploadUrl(file.name, file.type);
-
-    // 2. Upload to MinIO
-    const uploadResponse = await fetch(uploadUrl, {
-      method: 'PUT',
-      body: file,
-      headers: {
-        'Content-Type': file.type,
-      },
-    });
-
-    if (!uploadResponse.ok) {
-      throw new Error('Error al subir el archivo');
+      throw new Error('Error al subir el documento');
     }
 
-    // 3. Register file in our database
-    const fileData = {
-      nombre: file.name,
-      tipo: file.type.split('/')[1],
-      tamaño: file.size,
-      url: uploadUrl.split('?')[0], // Remove query parameters from URL
-    };
-
-    const registerResponse = await apiClient('/api/documentos', {
-      method: 'POST',
-      body: fileData,
-    });
-
-    return this.handleResponse(registerResponse);
+    return response.json();
   }
 
-  static async deleteFile(id: string): Promise<void> {
-    const response = await apiClient(`/api/documentos/${id}`, {
+  async deleteDocument(documentId: number): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/api/documents/${documentId}`, {
       method: 'DELETE',
     });
 
     if (!response.ok) {
-      throw new Error('Error al eliminar el archivo');
+      throw new Error('Error al eliminar el documento');
     }
   }
 
-  static async getDocumentos(): Promise<Documento[]> {
-    const response = await apiClient('/api/documentos');
-    return this.handleResponse(response);
-  }
+  getDocumentUrl(documento: Documento): string {
+    if (!documento?.id) {
+      throw new Error('ID del documento no disponible');
+    }
 
-  static async getDocumento(id: string): Promise<Documento> {
-    const response = await apiClient(`/api/documentos/${id}`);
-    return this.handleResponse(response);
+    return `${this.baseUrl}/api/documents/download/${documento.id}`;
   }
 }
+
+export default DocumentService;

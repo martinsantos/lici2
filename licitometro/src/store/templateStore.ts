@@ -23,7 +23,7 @@ export const useTemplateStore = create<TemplateStore>((set, get) => ({
   fetchTemplates: async () => {
     try {
       set({ loading: true, error: null });
-      const templates = await api('/templates');
+      const templates = await api('/api/recon/templates');
       set({ templates, loading: false });
     } catch (error) {
       set({ 

@@ -1,0 +1,10 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ReconPage from '../components/recon/_ReconPage';
+---
+
+<Layout title="RECON - Licitómetro">
+  <div id="mui-root">
+    <ReconPage client:only="react" />
+  </div>
+</Layout>

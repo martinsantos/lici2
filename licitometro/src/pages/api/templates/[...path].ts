@@ -1,12 +1,14 @@
 import type { APIRoute } from 'astro';
 
 // Proxy para el backend
-const BACKEND_URL = 'http://localhost:8000';
+const BACKEND_URL = 'http://localhost:3003';
 
 export const all: APIRoute = async ({ request, params }) => {
   try {
     const path = params.path || '';
     const url = `${BACKEND_URL}/api/templates/${path}`;
+    
+    console.log('Forwarding request to:', url); // Log para debug
     
     // Copiar el método y los headers
     const fetchOptions: RequestInit = {
@@ -32,7 +34,10 @@ export const all: APIRoute = async ({ request, params }) => {
     });
   } catch (error) {
     console.error('API Error:', error);
-    return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
+    return new Response(JSON.stringify({ 
+      error: 'Internal Server Error',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }), {
       status: 500,
       headers: {
         'Content-Type': 'application/json',

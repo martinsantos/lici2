@@ -1,0 +1,2 @@
+Este es un archivo de prueba para la carga de archivos.
+Contiene texto simple para verificar la funcionalidad de carga.

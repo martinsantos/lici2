@@ -1,0 +1,96 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Modelo principal de Licitación
+model Licitacion {
+  id                Int       @id @default(autoincrement())
+  titulo           String
+  descripcion      String
+  fechaPublicacion DateTime
+  fechaApertura    DateTime?
+  numeroExpediente String?
+  numeroLicitacion String?
+  organismo        String?
+  contacto         String?
+  monto            Float?    @default(0)
+  estado           String?   @default("Pendiente")
+  categoria        String?
+  ubicacion        String?
+  plazo            String?
+  requisitos       String[]  @default([])
+  garantia         String?
+  presupuesto      Float?    @default(0)
+  moneda           String?   @default("ARS")
+  idioma           String?   @default("es")
+  etapa            String?
+  modalidad        String?
+  area             String?
+  existe           Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  origen           String    @default("manual") // "manual" o "scraping"
+  documentos       Documento[]
+  reconTemplate    ReconTemplate? @relation(fields: [templateId], references: [id])
+  templateId       Int?
+
+  @@index([fechaPublicacion])
+  @@index([estado])
+  @@index([organismo])
+  @@index([origen])
+}
+
+// Modelo para documentos adjuntos
+model Documento {
+  id          Int        @id @default(autoincrement())
+  filename    String
+  filepath    String
+  mimetype    String
+  size        Int
+  uploadDate  DateTime   @default(now())
+  licitacion  Licitacion @relation(fields: [licitacionId], references: [id])
+  licitacionId Int
+  metadata    Json?      // Metadatos adicionales del documento
+
+  @@index([licitacionId])
+}
+
+// Modelo para templates de RECON
+model ReconTemplate {
+  id          Int         @id @default(autoincrement())
+  nombre      String      @unique
+  descripcion String?
+  features    Feature[]
+  licitaciones Licitacion[]
+  activo      Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  config      Json?       // Configuración específica del template
+
+  @@index([nombre])
+}
+
+// Modelo para features de fuentes de datos
+model Feature {
+  id            Int           @id @default(autoincrement())
+  nombre        String
+  tipo          String        // tipo de feature (texto, número, fecha, etc.)
+  descripcion   String?
+  requerido     Boolean       @default(false)
+  template      ReconTemplate @relation(fields: [templateId], references: [id])
+  templateId    Int
+  configuracion Json?         // Configuración específica de la feature
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@unique([nombre, templateId])
+  @@index([templateId])
+}

@@ -1,0 +1,61 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-py"
+}
+
+model Licitacion {
+  id                Int       @id @default(autoincrement())
+  titulo            String
+  descripcion       String?
+  fechaPublicacion  DateTime
+  fechaApertura     DateTime?
+  numeroExpediente  String?
+  numeroLicitacion  String?
+  organismo         String?
+  contacto          String?
+  monto            Float?
+  estado           String    @default("Pendiente")
+  categoria        String?
+  ubicacion        String?
+  plazo            String?
+  requisitos       String[]
+  garantia         String?
+  documentos       String[]
+  presupuesto      Float?
+  moneda           String    @default("ARS")
+  idioma           String    @default("es")
+  etapa            String?
+  modalidad        String?
+  area             String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+model ScrapingTemplate {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  description String?
+  url         String
+  fields      Json
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  jobs        ScrapingJob[]
+}
+
+model ScrapingJob {
+  id            Int       @id @default(autoincrement())
+  templateId    Int
+  template      ScrapingTemplate @relation(fields: [templateId], references: [id])
+  status        String    @default("pending")
+  startedAt     DateTime?
+  completedAt   DateTime?
+  result        Json?
+  errorMessage  String?
+  celeryTaskId  String?
+  createdAt     DateTime  @default(now())
+}

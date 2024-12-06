@@ -1,0 +1,24 @@
+{
+    "email": {
+        "habilitado": false,
+        "smtp_host": "",
+        "smtp_puerto": 587,
+        "remitente": "",
+        "password": "",
+        "destinatarios": []
+    },
+    "telegram": {
+        "habilitado": false,
+        "token_bot": "",
+        "chat_ids": []
+    },
+    "webhook": {
+        "habilitado": false,
+        "urls": []
+    },
+    "filtros": {
+        "monto_minimo": 0,
+        "estados": ["En Proceso", "Publicado"],
+        "organismos": []
+    }
+}

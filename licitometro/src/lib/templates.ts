@@ -90,6 +90,31 @@ export class TemplateService {
     }
   }
 
+  static async getTemplateHistory(id: string): Promise<any[]> {
+    try {
+      return await api(`/templates/${id}/history`);
+    } catch (error) {
+      console.error(`Error fetching template history ${id}:`, error);
+      throw error;
+    }
+  }
+
+  static async runTemplateJob(id: string, options?: { test?: boolean }): Promise<any> {
+    try {
+      const endpoint = options?.test ? `/templates/${id}/test` : `/templates/${id}/run`;
+      return await api(endpoint, {
+        method: 'POST',
+      });
+    } catch (error) {
+      console.error(`Error running template ${id}:`, error);
+      throw error;
+    }
+  }
+
+  static async testTemplate(id: string): Promise<any> {
+    return this.runTemplateJob(id, { test: true });
+  }
+
   static async runTemplate(templateId: string): Promise<void> {
     try {
       await api(`/templates/${templateId}/run`, {
@@ -100,15 +125,10 @@ export class TemplateService {
       throw error;
     }
   }
-
-  static async testTemplate(templateId: string): Promise<any> {
-    try {
-      return await api(`/templates/${templateId}/test`, {
-        method: 'POST',
-      });
-    } catch (error) {
-      console.error(`Error testing template ${templateId}:`, error);
-      throw error;
-    }
-  }
 }
+
+// Export individual functions to match the import statements
+export const getTemplateHistory = TemplateService.getTemplateHistory;
+export const getTemplateById = TemplateService.getTemplate;
+export const runTemplateJob = TemplateService.runTemplateJob;
+export const testTemplate = TemplateService.testTemplate;

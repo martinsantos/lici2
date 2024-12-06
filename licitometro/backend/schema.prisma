@@ -1,0 +1,96 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-py"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Licitacion {
+  id               Int       @id @default(autoincrement())
+  titulo           String
+  descripcion      String
+  fechaPublicacion DateTime
+  fechaApertura    DateTime?
+  numeroExpediente String?
+  numeroLicitacion String?
+  organismo        String?
+  contacto         String?
+  monto            Float?    @default(0)
+  estado           String?   @default("Pendiente")
+  categoria        String?
+  ubicacion        String?
+  plazo            String?
+  requisitos       String[]
+  garantia         String?
+  documentos       String[]
+  presupuesto      Float?    @default(0)
+  moneda           String?   @default("ARS")
+  idioma           String?   @default("es")
+  etapa            String?
+  modalidad        String?
+  area             String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+model ScrapingTemplate {
+  id                  Int       @id @default(autoincrement())
+  name                String    @unique
+  source_url          String
+  field_mapping       Json
+  transformation_rules Json?
+  frequency_hours     Int       @default(24)
+  is_active          Boolean   @default(true)
+  last_run           DateTime?
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @updatedAt
+}
+
+model ScrapingJob {
+  id                Int       @id @default(autoincrement())
+  template_id       Int
+  status            String    @default("pending") // pending, running, completed, failed
+  start_time        DateTime?
+  end_time          DateTime?
+  error_message     String?
+  results           Json?
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+}
+
+model ReconTemplate {
+  id                Int       @id @default(autoincrement())
+  name             String    @unique
+  description      String
+  config           Json
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+  is_active        Boolean   @default(true)
+  last_run         DateTime?
+}
+
+model ReconFeature {
+  id                Int       @id @default(autoincrement())
+  name             String    @unique
+  description      String
+  source_type      String
+  feature_data     Json
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+}
+
+model Document {
+  id                Int       @id @default(autoincrement())
+  filename         String
+  file_path        String
+  content_type     String
+  size             Int
+  licitacion_id    Int?
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+}

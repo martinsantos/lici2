@@ -1,0 +1,81 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import { getLicitacionById, getStaticPaths } from '../../../utils/staticData';
+import ParticipationFormIsland from '../../../components/islands/ParticipationFormIsland';
+
+export { getStaticPaths };
+
+const { id } = Astro.params;
+const licitacion = await getLicitacionById(id);
+
+if (!licitacion) {
+  return Astro.redirect('/404');
+}
+
+if (licitacion.estado !== 'Abierta') {
+  return Astro.redirect(`/licitaciones/${id}`);
+}
+---
+
+<Layout title={`Participar en ${licitacion.titulo} - Licitometro`}>
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <nav class="mb-8" aria-label="Breadcrumb">
+      <ol class="flex items-center space-x-2 text-sm text-gray-500">
+        <li>
+          <a href="/licitaciones" class="hover:text-gray-700">Licitaciones</a>
+        </li>
+        <li>
+          <svg class="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+          </svg>
+        </li>
+        <li>
+          <a href={`/licitaciones/${id}`} class="hover:text-gray-700">{licitacion.titulo}</a>
+        </li>
+        <li>
+          <svg class="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+          </svg>
+        </li>
+        <li>
+          <span class="text-gray-700">Participar</span>
+        </li>
+      </ol>
+    </nav>
+
+    <ParticipationFormIsland
+      client:load
+      licitacion={licitacion}
+      onSubmit={async (data) => {
+        try {
+          const response = await fetch('/api/participaciones', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              licitacionId: id,
+              ...data,
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error('Error al enviar la participación');
+          }
+
+          window.location.href = `/licitaciones/${id}?participacion=success`;
+        } catch (error) {
+          console.error('Error:', error);
+          throw error;
+        }
+      }}
+    />
+  </div>
+</Layout>
+
+<script>
+  // Cliente-side interactividad
+  document.addEventListener('astro:page-load', () => {
+    console.log('Página de participación cargada - Listo para interactividad');
+  });
+</script>
